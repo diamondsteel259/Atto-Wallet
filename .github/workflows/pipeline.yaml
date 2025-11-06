@@ -48,7 +48,8 @@ jobs:
             artifacts/windows/*.msi
             artifacts/android-apk/*.apk
             artifacts/android-bundle/*.aab
-            artifacts/ios-frameworks/**/*.framework
+            # iOS temporarily disabled
+            # artifacts/ios-frameworks/**/*.framework
   preview:
     concurrency:
       group: "live"
