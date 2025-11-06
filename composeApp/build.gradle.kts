@@ -173,6 +173,9 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Enable MultiDex to support large number of methods (65K+ limit)
+        multiDexEnabled = true
     }
     packaging {
         resources {
