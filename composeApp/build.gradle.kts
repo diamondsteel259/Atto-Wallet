@@ -71,11 +71,12 @@ kotlin {
         androidMain.dependsOn(jvmMain)
         desktopMain.dependsOn(jvmMain)
 
-        val iosMain by getting
-        iosMain.dependencies {
-            implementation(libs.room.runtime)
-            implementation(libs.sqlite.bundled)
-        }
+        // iOS dependencies temporarily disabled
+        // val iosMain by getting
+        // iosMain.dependencies {
+        //     implementation(libs.room.runtime)
+        //     implementation(libs.sqlite.bundled)
+        // }
 
         androidMain.dependencies {
             implementation(compose.preview)
