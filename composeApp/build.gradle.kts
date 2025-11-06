@@ -32,6 +32,10 @@ kotlin {
 
     jvm("desktop")
 
+    iosX64()
+    iosArm64()
+    iosSimulatorArm64()
+
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
         outputModuleName.set("attoWallet")
@@ -64,6 +68,12 @@ kotlin {
         }
         androidMain.dependsOn(jvmMain)
         desktopMain.dependsOn(jvmMain)
+
+        val iosMain by getting
+        iosMain.dependencies {
+            implementation(libs.room.runtime)
+            implementation(libs.sqlite.bundled)
+        }
 
         androidMain.dependencies {
             implementation(compose.preview)
@@ -198,6 +208,9 @@ dependencies {
     listOf(
         "kspAndroid",
         "kspDesktop",
+        "kspIosX64",
+        "kspIosArm64",
+        "kspIosSimulatorArm64",
         "kspCommonMainMetadata"
     ).forEach {
         add(it, libs.room.compiler)
