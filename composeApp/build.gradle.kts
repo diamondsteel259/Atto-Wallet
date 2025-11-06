@@ -223,9 +223,10 @@ dependencies {
     listOf(
         "kspAndroid",
         "kspDesktop",
-        "kspIosX64",
-        "kspIosArm64",
-        "kspIosSimulatorArm64",
+        // iOS KSP temporarily disabled
+        // "kspIosX64",
+        // "kspIosArm64",
+        // "kspIosSimulatorArm64",
         "kspCommonMainMetadata"
     ).forEach {
         add(it, libs.room.compiler)
