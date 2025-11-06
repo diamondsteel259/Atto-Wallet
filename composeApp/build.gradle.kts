@@ -184,6 +184,15 @@ android {
     }
     buildTypes {
         getByName("release") {
+            isMinifyEnabled = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+        getByName("debug") {
+            // Keep debug builds fast - no minification
+            // MultiDex handles 65K method limit
             isMinifyEnabled = false
         }
     }
