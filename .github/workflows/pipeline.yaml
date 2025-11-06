@@ -46,6 +46,9 @@ jobs:
             artifacts/linux/*.deb
             artifacts/macos/*.dmg
             artifacts/windows/*.msi
+            artifacts/android-apk/*.apk
+            artifacts/android-bundle/*.aab
+            artifacts/ios-frameworks/**/*.framework
   preview:
     concurrency:
       group: "live"
