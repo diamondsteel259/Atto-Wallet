@@ -1,0 +1,167 @@
+name: Mobile Build (Android & iOS)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'composeApp/**'
+      - 'iosApp/**'
+      - '.github/workflows/mobile-build.yaml'
+  pull_request:
+    paths:
+      - 'composeApp/**'
+      - 'iosApp/**'
+
+jobs:
+  build-android:
+    name: Build Android
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build Android Debug APK
+        run: ./gradlew assembleDebug --stacktrace
+
+      - name: Build Android Release Bundle (unsigned)
+        run: ./gradlew bundleRelease --stacktrace
+
+      - name: Upload Android Debug APK
+        uses: actions/upload-artifact@v5
+        with:
+          name: android-debug-apk
+          path: composeApp/build/outputs/apk/debug/*.apk
+          retention-days: 30
+
+      - name: Upload Android Release Bundle
+        uses: actions/upload-artifact@v5
+        with:
+          name: android-release-bundle
+          path: composeApp/build/outputs/bundle/release/*.aab
+          retention-days: 30
+
+  build-ios:
+    name: Build iOS
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '15.2'
+
+      - name: Install CocoaPods (if needed)
+        run: |
+          if [ -f "iosApp/Podfile" ]; then
+            cd iosApp
+            pod install
+          fi
+
+      - name: Build iOS Framework for Simulator (ARM64)
+        run: ./gradlew linkDebugFrameworkIosSimulatorArm64 --stacktrace
+
+      - name: Build iOS Framework for Device (ARM64)
+        run: ./gradlew linkDebugFrameworkIosArm64 --stacktrace
+
+      - name: Build iOS Framework for Simulator (x64)
+        run: ./gradlew linkDebugFrameworkIosX64 --stacktrace
+
+      - name: List generated frameworks
+        run: |
+          echo "=== iOS Simulator ARM64 Framework ==="
+          ls -la composeApp/build/bin/iosSimulatorArm64/debugFramework/ || echo "Not found"
+          echo ""
+          echo "=== iOS Device ARM64 Framework ==="
+          ls -la composeApp/build/bin/iosArm64/debugFramework/ || echo "Not found"
+          echo ""
+          echo "=== iOS x64 Framework ==="
+          ls -la composeApp/build/bin/iosX64/debugFramework/ || echo "Not found"
+
+      - name: Build iOS App with Xcode (Simulator)
+        run: |
+          cd iosApp
+          xcodebuild clean build \
+            -project iosApp.xcodeproj \
+            -scheme iosApp \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' \
+            -derivedDataPath ./build \
+            | xcpretty || true
+
+      - name: Archive iOS App
+        run: |
+          cd iosApp
+          mkdir -p build/app
+          if [ -d "build/Build/Products/Debug-iphonesimulator/iosApp.app" ]; then
+            cp -R build/Build/Products/Debug-iphonesimulator/iosApp.app build/app/
+            cd build/app
+            zip -r iosApp.app.zip iosApp.app
+          fi
+
+      - name: Upload iOS Frameworks
+        uses: actions/upload-artifact@v5
+        with:
+          name: ios-frameworks
+          path: |
+            composeApp/build/bin/iosSimulatorArm64/debugFramework/*.framework
+            composeApp/build/bin/iosArm64/debugFramework/*.framework
+            composeApp/build/bin/iosX64/debugFramework/*.framework
+          retention-days: 30
+
+      - name: Upload iOS App (Simulator)
+        uses: actions/upload-artifact@v5
+        if: success()
+        with:
+          name: ios-simulator-app
+          path: iosApp/build/app/iosApp.app.zip
+          retention-days: 30
+
+  test-summary:
+    name: Build Summary
+    runs-on: ubuntu-latest
+    needs: [build-android, build-ios]
+    if: always()
+
+    steps:
+      - name: Build Status Summary
+        run: |
+          echo "## Mobile Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Android Build: ${{ needs.build-android.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "### iOS Build: ${{ needs.build-ios.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Artifacts have been uploaded and are available for download." >> $GITHUB_STEP_SUMMARY
