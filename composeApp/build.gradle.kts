@@ -32,9 +32,11 @@ kotlin {
 
     jvm("desktop")
 
-    iosX64()
-    iosArm64()
-    iosSimulatorArm64()
+    // iOS targets temporarily disabled until commons-wallet library adds iOS support
+    // See BUILD_FAILURES_REPORT.md for details
+    // iosX64()
+    // iosArm64()
+    // iosSimulatorArm64()
 
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
